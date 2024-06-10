@@ -11,7 +11,7 @@ var builder = Host.CreateDefaultBuilder()
     {
         services.AddQuartz(q =>
         {
-            q.UseMicrosoftDependencyInjectionJobFactory();
+            q.UseMicrosoftDependencyInjectionJobFactory(); 
         });
         services.AddQuartzHostedService(opt =>
         {
