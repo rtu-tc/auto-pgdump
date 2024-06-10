@@ -1,0 +1,18 @@
+﻿services:
+  pgdump:
+    image: 'pg_dump'
+    environment:
+      ConnectionStrings__Postgres: "Host=db;Port=5432;Database=minobr;Username=postgres;Password=password"
+      S3StorageOptions__ServiceUrl: "https://storage.yandexcloud.net"
+      S3StorageOptions__AccessKeyId: "YCAJEr0_B5ceJcFzMuXYM1lfx"
+      S3StorageOptions__SecretAccessKey: "YCO1tHMh0pnL_ufC3rsnNzTnaKBqByVTeXyCD82-"
+      S3StorageOptions__BucketName: "nodots"
+      S3StorageOptions__PathPrefix: "pgdump/minobr/dev"
+      S3StorageOptions__ForcePathStyle: false
+      ScheduleCron: "0 0/1 * * * ?"
+  db:
+    image: 'postgres:16.2'
+    ports:
+      - 5431:5432
+    environment:
+      POSTGRES_PASSWORD: 'password'

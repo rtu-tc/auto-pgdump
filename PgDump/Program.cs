@@ -45,24 +45,26 @@ class PgDumpJob: IJob
             .WithArguments(["--host", host, "--port", port, "--dbname", dbname, "-U", user, "-f", "dump.sql"])
             .WithEnvironmentVariables(new Dictionary<string, string?>(){{"PGPASSWORD", password}})
             .ExecuteAsync();
-        var (url, accessKeyId, secretAccessKey, bucketName) = GetS3Config();
+        var (url, accessKeyId, secretAccessKey, bucketName, pathPrefix) = GetS3Config();
         using var s3Client = new AmazonS3Client(accessKeyId, secretAccessKey, new AmazonS3Config()
         {
             ServiceURL = url,
             ForcePathStyle = true
         });
+        var key = $"{pathPrefix.TrimEnd('/')}/dump_{TimeProvider.System.GetUtcNow() + TimeSpan.FromHours(3):u}.sql";
         await s3Client.PutObjectAsync(new PutObjectRequest()
         {
             InputStream = new FileStream("dump.sql", FileMode.Open),
             BucketName = bucketName,
-            Key = $"pg_dump/{dbname}/dump_{TimeProvider.System.GetUtcNow() + TimeSpan.FromHours(3):u}.sql"
+            Key = key
         });
         
-        await s3Client.PutObjectAsync(new PutObjectRequest()
+        await s3Client.CopyObjectAsync(new CopyObjectRequest()
         {
-            InputStream = new FileStream("dump.sql", FileMode.Open),
-            BucketName = bucketName,
-            Key = $"pg_dump/{dbname}/latest.sql"
+            DestinationBucket = bucketName,
+            SourceBucket = bucketName,
+            SourceKey = key,
+            DestinationKey = $"{pathPrefix.TrimEnd('/')}/latest.sql"
         });
     }
     (string host, string port, string dbname, string user, string password) ParsePostgresConnectionString()
@@ -89,13 +91,14 @@ class PgDumpJob: IJob
             parsedConnectionString["password"]
             );
     }
-    (string url, string accessKeyId, string secretAccessKey, string bucketName) GetS3Config()
+    (string url, string accessKeyId, string secretAccessKey, string bucketName, string pathPrefix) GetS3Config()
     {
         var url = Environment.GetEnvironmentVariable("S3StorageOptions__ServiceUrl")!;
         var accessKeyId = Environment.GetEnvironmentVariable("S3StorageOptions__AccessKeyId")!;
         var secretAccessKey = Environment.GetEnvironmentVariable("S3StorageOptions__SecretAccessKey")!;
         var bucketName = Environment.GetEnvironmentVariable("S3StorageOptions__BucketName")!;
-        return (url, accessKeyId, secretAccessKey, bucketName);
+        var pathPrefix = Environment.GetEnvironmentVariable("S3StorageOptions__PathPrefix")!;
+        return (url, accessKeyId, secretAccessKey, bucketName, pathPrefix);
     }
 }
 
