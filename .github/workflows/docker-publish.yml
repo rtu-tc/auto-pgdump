@@ -17,6 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build image
+        working-directory: ./PgDump
         run: docker build . --file Dockerfile --tag $IMAGE_NAME
       
       - name: Log in to repo
