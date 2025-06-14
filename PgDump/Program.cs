@@ -39,7 +39,7 @@ await scheduler.ScheduleJob(job, trigger);
 await app.RunAsync();
 
 [DisallowConcurrentExecution]
-class PgDumpJob(ILogger<PgDumpJob> logger): IJob 
+class PgDumpJob(ILogger<PgDumpJob> logger) : IJob
 {
     public async Task Execute(IJobExecutionContext context)
     {
@@ -118,7 +118,7 @@ class PgDumpJob(ILogger<PgDumpJob> logger): IJob
         completeRequest.AddPartETags(copyResponses);
 
         // Complete the copy.
-        var completeUploadResponse = 
+        var completeUploadResponse =
             await s3Client.CompleteMultipartUploadAsync(completeRequest, cancellationToken: cancellationToken);
         logger.LogInformation("Job finished successfully");
     }
@@ -135,10 +135,10 @@ class PgDumpJob(ILogger<PgDumpJob> logger): IJob
     {
         var (host, port, dbname, user, password) = ParsePostgresConnectionString();
         logger.LogInformation("Started pg_dump of database {DatabaseTitle}", dbname);
-        var args = new string[]{"--host", host, "--port", port, "--dbname", dbname, "-U", user, PgDumpExtraArgs, "-f", "dump.sql"};
+        var args = new string[] { "--host", host, "--port", port, "--dbname", dbname, "-U", user, PgDumpExtraArgs, "-f", "dump.sql" };
         var response = await Cli.Wrap("pg_dump")
             .WithArguments(args.Where(a => !string.IsNullOrEmpty(a)))
-            .WithEnvironmentVariables(new Dictionary<string, string?>(){{"PGPASSWORD", password}})
+            .WithEnvironmentVariables(new Dictionary<string, string?>() { { "PGPASSWORD", password } })
             .WithStandardErrorPipe(PipeTarget.ToDelegate(s => logger.LogError(s)))
             .ExecuteAsync(cancellationToken: cancellationToken);
         logger.LogInformation("pg_dump of database {DatabaseTitle} finished successfully", dbname);
@@ -164,20 +164,23 @@ class PgDumpJob(ILogger<PgDumpJob> logger): IJob
             parsedConnectionString["host"],
             parsedConnectionString["port"],
             parsedConnectionString["dbname"],
-            parsedConnectionString["username"], 
+            parsedConnectionString["username"],
             parsedConnectionString["password"]
             );
     }
     (string url, string accessKeyId, string secretAccessKey, string bucketName, string pathPrefix) GetS3Config()
     {
-        var url = Environment.GetEnvironmentVariable("S3StorageOptions__ServiceUrl")!;
-        var accessKeyId = Environment.GetEnvironmentVariable("S3StorageOptions__AccessKeyId")!;
-        var secretAccessKey = Environment.GetEnvironmentVariable("S3StorageOptions__SecretAccessKey")!;
-        var bucketName = Environment.GetEnvironmentVariable("S3StorageOptions__BucketName")!;
-        var pathPrefix = Environment.GetEnvironmentVariable("S3StorageOptions__PathPrefix")!;
+        var url = GetRequiredEnviromentVariable("S3StorageOptions__ServiceUrl");
+        var accessKeyId = GetRequiredEnviromentVariable("S3StorageOptions__AccessKeyId");
+        var secretAccessKey = GetRequiredEnviromentVariable("S3StorageOptions__SecretAccessKey");
+        var bucketName = GetRequiredEnviromentVariable("S3StorageOptions__BucketName");
+        var pathPrefix = GetRequiredEnviromentVariable("S3StorageOptions__PathPrefix");
         return (url, accessKeyId, secretAccessKey, bucketName, pathPrefix);
     }
 
-    private string? PgDumpExtraArgs => Environment.GetEnvironmentVariable("PgDumpOptions__ExtraArgs");
+    private static string? PgDumpExtraArgs => Environment.GetEnvironmentVariable("PgDumpOptions__ExtraArgs");
+    private static string GetRequiredEnviromentVariable(string variable)
+        => Environment.GetEnvironmentVariable(variable)
+            ?? throw new InvalidDataException($"Environment variable \"{variable}\" not defined ");
 }
 
