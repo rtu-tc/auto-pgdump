@@ -27,7 +27,7 @@ jobs:
         run: |
           IMAGE_ID=ghcr.io/$IMAGE_NAME
           IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
-          VERSION="16-2"
+          VERSION="17-2"
           [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
           
           echo IMAGE_ID=$IMAGE_ID
