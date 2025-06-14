@@ -25,7 +25,7 @@ FROM ubuntu:latest as linux
 RUN apt update && apt  upgrade -y
 RUN apt install -y ca-certificates
 RUN apt install -y postgresql-common
-RUN /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh
+RUN printf '\n' | /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh
 RUN apt install -y postgresql-client-17
 RUN apt install -y dotnet-runtime-8.0
 RUN update-ca-certificates
