@@ -135,7 +135,7 @@ class PgDumpJob(ILogger<PgDumpJob> logger) : IJob
     {
         var (host, port, dbname, user, password) = ParsePostgresConnectionString();
         logger.LogInformation("Started pg_dump of database {DatabaseTitle}", dbname);
-        var args = new string[] { "--host", host, "--port", port, "--dbname", dbname, "-U", user, PgDumpExtraArgs, "-f", "dump.sql" };
+        var args = (new string[] { "--host", host, "--port", port, "--dbname", dbname, "-U", user, "-f", "dump.sql" }).Concat(PgDumpExtraArgs.Split(' '));
         var response = await Cli.Wrap("pg_dump")
             .WithArguments(args.Where(a => !string.IsNullOrEmpty(a)))
             .WithEnvironmentVariables(new Dictionary<string, string?>() { { "PGPASSWORD", password } })
@@ -178,7 +178,7 @@ class PgDumpJob(ILogger<PgDumpJob> logger) : IJob
         return (url, accessKeyId, secretAccessKey, bucketName, pathPrefix);
     }
 
-    private static string? PgDumpExtraArgs => Environment.GetEnvironmentVariable("PgDumpOptions__ExtraArgs");
+    private static string PgDumpExtraArgs => Environment.GetEnvironmentVariable("PgDumpOptions__ExtraArgs") ?? "";
     private static string GetRequiredEnviromentVariable(string variable)
         => Environment.GetEnvironmentVariable(variable)
             ?? throw new InvalidDataException($"Environment variable \"{variable}\" not defined ");
